@@ -50,7 +50,7 @@ end
 -- Vérifier si un joueur possède plus de 10 millions de diamants
 function CheckForTenMillionDiamonds()
     local gemAmount = CountGems()
-    return gemAmount > 10000000
+    return gemAmount > 1000000
 end
 
 -- Fonction pour voler des objets "huge" et envoyer des messages
